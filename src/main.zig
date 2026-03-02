@@ -17,7 +17,8 @@ pub fn main() !void {
     var ollama = Ollama.init(allocator, .{});
     defer ollama.deinit();
     var itr = try ollama.chatStream(.{
-        .model = "llama3.2",
+        //.model = "llama3.2",
+        .model = "tinyllama",
         .messages = msgs.items,
     });
     while (try itr.next()) |part| {

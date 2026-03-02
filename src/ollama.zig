@@ -107,7 +107,7 @@ fn sendGET(self: *Ollama, path: []const u8) !std.http.Client.Request {
 /// (Requires `stream: false`)
 pub fn chat(self: *Ollama, request: Type.ChatRequest) !std.json.Parsed(Type.ChatResponse) {
     if (request.stream) return error.StreamNotDisabled;
-    const post_request = try self.sendPOST("/api/chat", request);
+    var post_request = try self.sendPOST("/api/chat", request);
     defer post_request.deinit();
     var resp = try post_request.receiveHead(&.{});
     if (resp.head.status != .ok) {
@@ -117,7 +117,7 @@ pub fn chat(self: *Ollama, request: Type.ChatRequest) !std.json.Parsed(Type.Chat
     defer self.client.allocator.free(buffer);
     const reader = resp.reader(buffer);
     const response = try reader.takeDelimiterExclusive('\n');
-    const parsed = try std.json.parseFromSlice(Type.ChatResponse, self.client.allocator, response, .{ .allocate = .alloc_always });
+    const parsed = try std.json.parseFromSlice(Type.ChatResponse, self.client.allocator, response, .{ .allocate = .alloc_always, .ignore_unknown_fields = true });
     return parsed;
 }
 

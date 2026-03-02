@@ -15,7 +15,7 @@ The Ollama zig library is the easiest way to interact and integrate your Zig pro
 
 ## Requirements
 
-- **Zig 0.15.1+** (uses the new `std.Io.Reader`/`std.Io.Writer` API)
+- **Zig 0.15.2+** (uses the new `std.Io.Reader`/`std.Io.Writer` API)
 - [Ollama](https://ollama.ai/) running locally or remotely
 
 ## Installation
