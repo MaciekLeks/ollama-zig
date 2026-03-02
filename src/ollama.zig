@@ -141,7 +141,7 @@ pub fn chatStream(self: *Ollama, request: Type.ChatRequest) !Streamable(Type.Cha
 /// (Requires `stream: false`)
 pub fn generate(self: *Ollama, request: Type.GenerateRequest) !std.json.Parsed(Type.GenerateResponse) {
     if (request.stream) return error.StreamNotDisabled;
-    const post_request = try self.sendPOST("/api/generate", request);
+    var post_request = try self.sendPOST("/api/generate", request);
     defer post_request.deinit();
     var resp = try post_request.receiveHead(&.{});
     if (resp.head.status != .ok) {
@@ -152,7 +152,7 @@ pub fn generate(self: *Ollama, request: Type.GenerateRequest) !std.json.Parsed(T
     defer self.client.allocator.free(buffer);
     const reader = resp.reader(buffer);
     const response = try reader.takeDelimiterExclusive('\n');
-    const parsed = try std.json.parseFromSlice(Type.GenerateResponse, self.client.allocator, response, .{ .allocate = .alloc_always });
+    const parsed = try std.json.parseFromSlice(Type.GenerateResponse, self.client.allocator, response, .{ .allocate = .alloc_always, .ignore_unknown_fields = true });
     return parsed;
 }
 

@@ -31,7 +31,7 @@ The Ollama zig library is the easiest way to interact and integrate your Zig pro
    Or use the GitHub URL directly:
 
    ```bash
-   zig fetch --save https://github.com/naamfung/ollama-zig/archive/main.tar.gz
+   zig fetch --save https://github.com/MaciekLeks/ollama-zig/archive/main.tar.gz
    ```
 
 2. Add the dependency and module to your `build.zig`:
