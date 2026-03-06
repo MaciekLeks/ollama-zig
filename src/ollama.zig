@@ -40,7 +40,17 @@ fn Streamable(comptime T: type) type {
             if (current) |cur| {
                 cur.deinit();
             }
-            const resp = try response_reader.takeDelimiterExclusive('\n');
+            // note: takeDelimiterExclusive does not remove '\n' from the stream in v0.15.2
+            // TODO: change to takeDelimiterExclusive
+            const resp = response_reader.takeDelimiterInclusive('\n') catch |err| switch (err) {
+                error.EndOfStream => {
+                    done = true;
+                    return null;
+                },
+                else => {
+                    return err;
+                },
+            };
             current = try std.json.parseFromSlice(T, self.allocator, resp, .{ .ignore_unknown_fields = true });
 
             done = current.?.value.done;
