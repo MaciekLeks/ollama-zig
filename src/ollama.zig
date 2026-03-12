@@ -10,63 +10,63 @@ fn Streamable(comptime T: type) type {
         allocator: std.mem.Allocator,
         request: std.http.Client.Request,
         max: usize,
+        done: bool = false,
+        first: bool = true,
+        deinit_done: bool = false,
+        current: ?std.json.Parsed(T) = null,
         var buffer: []u8 = undefined;
         var response: std.http.Client.Response = undefined;
         var response_reader: *std.Io.Reader = undefined;
-        var first: bool = true;
-        var current: ?std.json.Parsed(T) = null;
-        var done: bool = false;
-        var deinit_done = false;
         /// next() frees the previously returned result from memory. The returned value is only valid until the
         /// next iteration or call. Use or copy before that.
         pub fn next(self: *@This()) !?T {
-            if (done) {
-                if (!deinit_done) {
-                    if (current) |cur| {
+            if (self.done) {
+                if (!self.deinit_done) {
+                    if (self.current) |cur| {
                         cur.deinit();
                     }
                     self.request.deinit();
                     self.allocator.free(buffer);
-                    deinit_done = true;
+                    self.deinit_done = true;
                 }
                 return null;
             }
-            if (first) {
+            if (self.first) {
                 response = try self.request.receiveHead(&.{});
                 buffer = try self.allocator.alloc(u8, self.max);
                 response_reader = response.reader(buffer);
-                first = false;
+                self.first = false;
             }
-            if (current) |cur| {
+            if (self.current) |cur| {
                 cur.deinit();
             }
             // note: takeDelimiterExclusive does not remove '\n' from the stream in v0.15.2
             // TODO: change to takeDelimiterExclusive
             const resp = response_reader.takeDelimiterInclusive('\n') catch |err| switch (err) {
                 error.EndOfStream => {
-                    done = true;
+                    self.done = true;
                     return null;
                 },
                 else => {
                     return err;
                 },
             };
-            current = try std.json.parseFromSlice(T, self.allocator, resp, .{ .ignore_unknown_fields = true });
+            self.current = try std.json.parseFromSlice(T, self.allocator, resp, .{ .ignore_unknown_fields = true });
 
-            done = current.?.value.done;
+            self.done = self.current.?.value.done;
 
-            return current.?.value;
+            return self.current.?.value;
         }
         // If iterator finished this function is a no-op
         pub fn deinit(self: *@This()) void {
-            if (!deinit_done & !first) {
-                if (current) |cur| {
+            if (!self.deinit_done & !self.first) {
+                if (self.current) |cur| {
                     cur.deinit();
                 }
                 self.request.deinit();
                 self.allocator.free(buffer);
-                done = true;
-                deinit_done = true;
+                self.done = true;
+                self.deinit_done = true;
             }
         }
     };
